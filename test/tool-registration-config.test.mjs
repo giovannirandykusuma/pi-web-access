@@ -75,8 +75,8 @@ test("malformed config falls back during extension registration", () => {
 
 test("default public execution tool definitions retain their compatibility hashes", () => {
 	const expected = {
-		web_search: "86a2703f9ca905c7b84f758a986e32b03458939de50d24d0026d27c588c6f27e",
-		source_check: "be86e565fd8329f134ad28147ba4b7ad22dc1123eb0f631beec91a7b3a5490a3",
+		web_search: "36344206f76637a5833b0ce65ff1f6be1cc8ef2d23f4fc99f3af666711f1d46e",
+		source_check: "331edc6bd25efe2f2601bd46fe7c5e15ab41c2b901bf17a8e4bff3b7c25e1b4b",
 		fetch_content: "0082465bae0f184988fd37fe152cad9c7a236e410747ba6770013895a28978d4",
 		get_search_content: "e1c7597fc085a811c0c6fcde365a96571c275c70b93a48206a38be06a7a45a5f",
 	};
@@ -199,4 +199,17 @@ test("README documents registration gates and toolNames", () => {
 	assert.match(readmeSrc, /"commands": \{/);
 	assert.match(readmeSrc, /Pi restart is required for tool and command registration changes/);
 	assert.match(readmeSrc, /`toolNames` can opt into alternate public tool names/);
+});
+
+test("web_search/source_check descriptions stay compact but keep every schema constraint", () => {
+	const search = registeredTool({}, "web_search"), source = registeredTool({}, "source_check");
+	assert.ok(search.description.length < 700, `web_search description grew to ${search.description.length}`);
+	assert.doesNotMatch(search.description, /Brave, Parallel/, "provider catalog belongs in the enum, not repeated in prose");
+	for (const tool of [search, source]) {
+		const provider = tool.parameters.properties.provider;
+		assert.ok(provider.anyOf[0].enum.includes("brave") && provider.anyOf[1].items.enum.includes("brave"), "typed provider choices kept");
+		assert.match(provider.description, /"all" skips explicit-only providers \(.*duckduckgo.*\); name them directly/, "all-vs-explicit semantics kept");
+	}
+	assert.match(search.description, /responseId/);
+	assert.match(search.parameters.properties.proxy.description, /Empty string forces direct access/);
 });
