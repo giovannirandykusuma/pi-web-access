@@ -72,6 +72,7 @@ import { isSerplyAvailable } from "./serply.ts";
 import { isKeenableAvailable } from "./keenable.ts";
 import { isCeramicAvailable } from "./ceramic.ts";
 import { isLinkupAvailable } from "./linkup.ts";
+import { isNineRouterAvailable } from "./ninerouter.ts";
 import { isDeepSeekAvailable } from "./deepseek.ts";
 import { isBaizhiAvailable } from "./baizhi.ts";
 import { isZaiAvailable } from "./zai.ts";
@@ -357,6 +358,7 @@ async function getProviderAvailability(ctx: ExtensionContext): Promise<ProviderA
 		keenable: allowedProviders.has("keenable") && isKeenableAvailable(),
 		ceramic: allowedProviders.has("ceramic") && isCeramicAvailable(),
 		linkup: allowedProviders.has("linkup") && isLinkupAvailable(),
+		ninerouter: allowedProviders.has("ninerouter") && isNineRouterAvailable(),
 		deepseek: allowedProviders.has("deepseek") && isDeepSeekAvailable(),
 	};
 	return {

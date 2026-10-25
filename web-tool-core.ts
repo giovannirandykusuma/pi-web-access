@@ -70,6 +70,9 @@ export interface WebSearchConfig {
 	ceramicApiKey?: unknown;
 	linkupApiKey?: unknown;
 	linkupDepth?: unknown;
+	ninerouterBaseUrl?: unknown;
+	ninerouterApiKey?: unknown;
+	ninerouterProvider?: unknown;
 	deepseekApiKey?: unknown;
 	degoogBaseUrl?: unknown;
 	degoogApiKey?: unknown;
