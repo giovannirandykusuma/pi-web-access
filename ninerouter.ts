@@ -58,6 +58,12 @@ export async function searchWithNineRouter(query: string, options: SearchOptions
 			signal: options.signal ? AbortSignal.any([timeout, options.signal]) : timeout,
 		}, ["Authorization"]);
 	} catch (err) {
+		// Node reports the deadline as "aborted due to timeout", which routing would treat as a cancellation.
+		if (!options.signal?.aborted && (timeout.aborted || (err instanceof Error && err.name === "TimeoutError"))) {
+			const message = `9router request timed out after ${SEARCH_TIMEOUT_MS / 1000}s`;
+			activityMonitor.logError(activityId, message);
+			throw new Error(message);
+		}
 		const message = redactCredential(err instanceof Error ? err.message : String(err), apiKey);
 		activityMonitor.logError(activityId, message);
 		if (err instanceof Error && err.message === message) throw err;

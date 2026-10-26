@@ -46,7 +46,7 @@ test("9router needs a base URL and is unavailable without one", async () => {
 	assert.match(output.error, /9router base URL not found/);
 });
 
-test("9router errors keep the HTTP status, redact the key, and let searchRouting fall back on quota", async () => {
+test("9router errors keep the HTTP status, redact the key, and let searchRouting fall back on quota and timeouts", async () => {
 	const error = await child({ ninerouterBaseUrl: BASE, ninerouterApiKey: "secret" }, `
 		globalThis.fetch = async () => new Response("bad key secret", { status: 401 });
 		const { searchWithNineRouter } = await import(${moduleUrl("ninerouter")});
@@ -54,14 +54,16 @@ test("9router errors keep the HTTP status, redact the key, and let searchRouting
 		console.log(JSON.stringify(error));
 	`);
 	assert.equal(error, "9router error 401: bad key [redacted]");
-	const routed = await child({ ninerouterBaseUrl: BASE, ceramicApiKey: "c", searchRouting: { providers: ["ninerouter", "ceramic"], fallbackOn: ["quota"] } }, `
-		globalThis.fetch = async url => String(url) === ${JSON.stringify(SEARCH)}
-			? new Response("slow down", { status: 429 })
-			: new Response(JSON.stringify({ result: { results: [{ title: "Fallback", url: "https://example.com", description: "ok" }] } }));
-		const { search } = await import(${moduleUrl("gemini-search")});
-		console.log(JSON.stringify((await search("q")).provider));
-	`);
-	assert.equal(routed, "ceramic");
+	for (const [kind, failure] of [["quota", `new Response("slow down", { status: 429 })`], ["network", `Promise.reject(new DOMException("The operation was aborted due to timeout", "TimeoutError"))`]]) {
+		const routed = await child({ ninerouterBaseUrl: BASE, ceramicApiKey: "c", searchRouting: { providers: ["ninerouter", "ceramic"], fallbackOn: [kind] } }, `
+			globalThis.fetch = async url => String(url) === ${JSON.stringify(SEARCH)}
+				? ${failure}
+				: new Response(JSON.stringify({ result: { results: [{ title: "Fallback", url: "https://example.com", description: "ok" }] } }));
+			const { search } = await import(${moduleUrl("gemini-search")});
+			console.log(JSON.stringify((await search("q")).provider));
+		`);
+		assert.equal(routed, "ceramic", kind);
+	}
 });
 
 test("9router is explicit-only: it never joins auto or all", async () => {
