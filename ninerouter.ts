@@ -43,9 +43,9 @@ export async function searchWithNineRouter(query: string, options: SearchOptions
 	const numResults = normalizeSearchResultCount(options.numResults);
 	const timeout = AbortSignal.timeout(SEARCH_TIMEOUT_MS);
 	const activityId = activityMonitor.logStart({ type: "api", query });
-	let response: Response;
+	let data: { results?: unknown; answer?: unknown } | null;
 	try {
-		response = await fetchWithCredentialRedirects(`${base}/search`, {
+		const response = await fetchWithCredentialRedirects(`${base}/search`, {
 			method: "POST",
 			headers: { ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}), "Content-Type": "application/json", Accept: "application/json" },
 			body: JSON.stringify({
@@ -57,6 +57,11 @@ export async function searchWithNineRouter(query: string, options: SearchOptions
 			}),
 			signal: options.signal ? AbortSignal.any([timeout, options.signal]) : timeout,
 		}, ["Authorization"]);
+		// The status stays in the message so searchRouting can classify quota and transient failures.
+		if (!response.ok) throw new Error(`9router error ${response.status}: ${redactCredential(await response.text(), apiKey).slice(0, 300)}`);
+		// Syntax errors can quote the body, so they are not echoed; a stalled body read reaches the timeout check below.
+		data = await response.json().catch((err: unknown) => { throw err instanceof SyntaxError ? new Error("9router returned invalid JSON") : err; });
+		activityMonitor.logComplete(activityId, response.status);
 	} catch (err) {
 		// Node reports the deadline as "aborted due to timeout", which routing would treat as a cancellation.
 		if (!options.signal?.aborted && (timeout.aborted || (err instanceof Error && err.name === "TimeoutError"))) {
@@ -69,11 +74,6 @@ export async function searchWithNineRouter(query: string, options: SearchOptions
 		if (err instanceof Error && err.message === message) throw err;
 		throw new Error(message);
 	}
-	activityMonitor.logComplete(activityId, response.status);
-	// The status stays in the message so searchRouting can classify quota and transient failures.
-	if (!response.ok) throw new Error(`9router error ${response.status}: ${redactCredential(await response.text(), apiKey).slice(0, 300)}`);
-	let data: { results?: unknown; answer?: unknown } | null;
-	try { data = await response.json(); } catch { throw new Error("9router returned invalid JSON"); }
 	if (!Array.isArray(data?.results)) throw new Error("9router returned invalid response: expected results array");
 	const results: SearchResponse["results"] = [];
 	for (const entry of data.results as { title?: unknown; url?: unknown; snippet?: unknown }[]) {

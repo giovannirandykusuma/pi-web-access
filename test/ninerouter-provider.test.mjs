@@ -54,7 +54,8 @@ test("9router errors keep the HTTP status, redact the key, and let searchRouting
 		console.log(JSON.stringify(error));
 	`);
 	assert.equal(error, "9router error 401: bad key [redacted]");
-	for (const [kind, failure] of [["quota", `new Response("slow down", { status: 429 })`], ["network", `Promise.reject(new DOMException("The operation was aborted due to timeout", "TimeoutError"))`]]) {
+	const timedOut = `Promise.reject(new DOMException("The operation was aborted due to timeout", "TimeoutError"))`;
+	for (const [kind, failure] of [["quota", `new Response("slow down", { status: 429 })`], ["network", timedOut], ["network", `Object.assign(new Response("{}"), { json: () => ${timedOut} })`]]) {
 		const routed = await child({ ninerouterBaseUrl: BASE, ceramicApiKey: "c", searchRouting: { providers: ["ninerouter", "ceramic"], fallbackOn: [kind] } }, `
 			globalThis.fetch = async url => String(url) === ${JSON.stringify(SEARCH)}
 				? ${failure}
