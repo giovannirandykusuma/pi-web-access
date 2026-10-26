@@ -4,7 +4,7 @@
 
 # Pi Web Access
 
-**Web search, content extraction, and video understanding for Pi agent. OpenAI/Codex search, zero-config Exa search, Brave, Parallel, TinyFish, Search1API, Searchinfinity, Querit, Tavily, Firecrawl, Jina, SERPdive, Kagi, Bocha, Ollama, AnySearch, XCrawl, Valyu, xAI/Grok, Mistral, Bright Data SERP, SerpBase, SerpApi, Linkup, Serper, explicit-only Serply, a self-hosted 9router gateway, self-hosted SearXNG, degoog metasearch, self-hosted Crawl4AI extraction, keyless DuckDuckGo, keyless Keenable, optional browser-cookie Gemini Web, Kimi Code Plan search, or bring your own API keys.**
+**Web search, content extraction, and video understanding for Pi agent. OpenAI/Codex search, zero-config Exa search, Brave, Parallel, TinyFish, Search1API, Searchinfinity, Querit, Tavily, Firecrawl, Jina, SERPdive, Kagi, Bocha, Ollama, AnySearch, XCrawl, Valyu, xAI/Grok, Mistral, Bright Data SERP, SerpBase, SerpApi, Linkup, Serper, explicit-only Serply, self-hosted SearXNG, degoog metasearch, self-hosted Crawl4AI extraction, keyless DuckDuckGo, keyless Keenable, optional browser-cookie Gemini Web, Kimi Code Plan search, or bring your own API keys.**
 
 [![npm version](https://img.shields.io/npm/v/pi-web-access?style=for-the-badge)](https://www.npmjs.com/package/pi-web-access)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
@@ -808,19 +808,7 @@ Without an explicit `$` or `!` source, `OPENAI_API_KEY`, `BRAVE_API_KEY`, `PARAL
 
 ### 9router
 
-[9router](https://github.com/decolua/9router) is a self-hosted AI router whose unified `POST /v1/search` endpoint fronts many search APIs (Serper, Tavily, Exa, Brave, Linkup, Perplexity, and more) and dashboard combos that fail over between them. Point `ninerouterBaseUrl` (or `NINEROUTER_BASE_URL`) at the router's OpenAI-style `/v1` root and select `provider: "ninerouter"`; every search provider configured in the router then works without a separate key in this file.
-
-```json
-{
-  "ninerouterBaseUrl": "https://your-router.example.com/v1",
-  "ninerouterApiKey": "$NINEROUTER_API_KEY",
-  "ninerouterProvider": "serper"
-}
-```
-
-`ninerouterProvider` (or `NINEROUTER_SEARCH_PROVIDER`) names the router-side search provider id or combo and defaults to `"serper"`. `ninerouterApiKey` (or `NINEROUTER_API_KEY`) is sent as a Bearer token and may be omitted when the router runs with auth disabled; it uses the same literal, environment, and trusted command sources as other providers. The base URL follows the usual gateway rules (HTTPS unless loopback or `allowHttpBaseUrls`, no credentials, query, or fragment) and `/search` is appended. There is no default host, so the provider is available only once a base URL is set. 9router is explicit-only: it is excluded from `auto` and `provider: "all"`, but supports configured defaults, provider arrays, and `searchRouting.providers`.
-
-`numResults` maps to `max_results`, `recencyFilter` to `time_range`, and allowed domains to `domain_filter`; include and exclude domain filters are also reapplied locally because not every upstream honours them. A non-empty router `answer` is returned as the answer; otherwise results are formatted like other providers. With `includeContent: true`, page text already returned by the router is included inline, capped at 4,000 characters. Router HTTP errors keep their status, so `searchRouting.fallbackOn` treats 429 as `quota`, 5xx as `transient`, and transport failures as `network`. Requests have a 30-second deadline and respect caller cancellation.
+Select `provider: "ninerouter"` to search through a self-hosted [9router](https://github.com/decolua/9router), which fronts many search APIs behind one `/v1/search` endpoint. Set `ninerouterBaseUrl` (or `NINEROUTER_BASE_URL`) to the router's `/v1` root; `ninerouterApiKey` (or `NINEROUTER_API_KEY`) is optional, and `ninerouterProvider` (or `NINEROUTER_SEARCH_PROVIDER`) picks the router-side provider or combo (default `"serper"`). It is explicit-only: never chosen by `auto` or `all`.
 
 ### Linkup
 
